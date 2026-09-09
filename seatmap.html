@@ -1,0 +1,799 @@
+<title>6층 자리표</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F5F8;
+    --surface:#FFFFFF;
+    --surface-2:#EEF0F4;
+    --text:#16181D;
+    --text-muted:#6B7280;
+    --border:#E1E4EA;
+    --border-strong:#C7CCD6;
+    --accent:#F0562B;
+    --accent-soft:#FDE7DF;
+    --blue:#2F6FED;
+    --blue-soft:#EAF1FF;
+    --note-color:#8A4A34;
+    --shadow: 0 1px 2px rgba(20,22,28,0.06);
+    --shadow-lift: 0 12px 28px rgba(20,22,28,0.18);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14161A;
+      --surface:#1D2026;
+      --surface-2:#20242B;
+      --text:#F1F2F5;
+      --text-muted:#9AA1AC;
+      --border:#2B2F37;
+      --border-strong:#3A3F49;
+      --accent:#FF7A45;
+      --accent-soft:#3A2418;
+      --blue:#6FA0FF;
+      --blue-soft:#1C2740;
+      --note-color:#B4785A;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4);
+      --shadow-lift: 0 16px 32px rgba(0,0,0,0.55);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14161A;
+    --surface:#1D2026;
+    --surface-2:#20242B;
+    --text:#F1F2F5;
+    --text-muted:#9AA1AC;
+    --border:#2B2F37;
+    --border-strong:#3A3F49;
+    --accent:#FF7A45;
+    --accent-soft:#3A2418;
+    --blue:#6FA0FF;
+    --blue-soft:#1C2740;
+    --note-color:#B4785A;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4);
+    --shadow-lift: 0 16px 32px rgba(0,0,0,0.55);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+    padding:28px clamp(16px,3vw,40px) 48px;
+  }
+
+  .page{max-width:1680px;margin:0 auto;}
+
+  /* ---------- toolbar ---------- */
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:16px 24px;
+    padding-bottom:20px;
+    margin-bottom:20px;
+    border-bottom:1px solid var(--border);
+  }
+  .title-block h1{
+    margin:0;
+    font-size:26px;
+    font-weight:900;
+    letter-spacing:-0.01em;
+    text-wrap:balance;
+  }
+  .title-block h1 span{color:var(--accent);}
+  .title-block p{
+    margin:6px 0 0;
+    font-size:13.5px;
+    color:var(--text-muted);
+  }
+
+  .stats{display:flex;gap:10px;flex-wrap:wrap;}
+  .stat-chip{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    padding:8px 14px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    min-width:76px;
+  }
+  .stat-chip b{font-size:18px;font-variant-numeric:tabular-nums;line-height:1;}
+  .stat-chip span{font-size:11.5px;color:var(--text-muted);}
+  .stat-chip.vacant b{color:var(--blue);}
+
+  .actions{display:flex;gap:8px;align-items:center;}
+  button.btn{
+    font-family:inherit;
+    font-size:13.5px;
+    font-weight:500;
+    padding:9px 16px;
+    border-radius:9px;
+    border:1px solid var(--border-strong);
+    background:var(--surface);
+    color:var(--text);
+    cursor:pointer;
+    transition:background .15s ease, transform .05s ease;
+  }
+  button.btn:hover{background:var(--surface-2);}
+  button.btn:active{transform:translateY(1px);}
+  button.btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+  button.btn.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+    font-weight:700;
+  }
+  button.btn.primary:hover{filter:brightness(1.06);}
+  .save-indicator{
+    font-size:11.5px;
+    color:var(--text-muted);
+    opacity:0;
+    transition:opacity .3s ease;
+  }
+  .save-indicator.show{opacity:1;}
+
+  /* ---------- floor plan ---------- */
+  .floor-wrap{
+    overflow-x:auto;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:var(--surface-2);
+    padding:8px;
+  }
+  .floor{
+    position:relative;
+    width:1600px;
+    height:660px;
+    background:
+      linear-gradient(var(--border) 1px, transparent 1px) 0 0/100% 150px,
+      var(--surface);
+    border-radius:12px;
+    background-repeat:no-repeat;
+  }
+
+  .entrance{
+    position:absolute;
+    top:18px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    color:var(--text-muted);
+  }
+  .entrance .arrow{font-size:20px;line-height:1;color:var(--border-strong);}
+  .entrance .label{
+    font-size:11px;
+    font-weight:500;
+    letter-spacing:.02em;
+    white-space:nowrap;
+    background:var(--surface-2);
+    padding:2px 8px;
+    border-radius:99px;
+  }
+
+  .seat{
+    position:absolute;
+    width:108px;
+    height:120px;
+    border-radius:12px;
+    background:var(--surface);
+    border:1.5px solid var(--border);
+    box-shadow:var(--shadow);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:8px 6px;
+    cursor:grab;
+    user-select:none;
+    touch-action:none;
+    transition:box-shadow .15s ease, border-color .15s ease;
+  }
+  .seat:hover{border-color:var(--border-strong);}
+  .seat.dragging{
+    cursor:grabbing;
+    box-shadow:var(--shadow-lift);
+    z-index:50;
+    transition:none;
+  }
+  .seat[data-status="vacant"]{
+    border:1.5px dashed var(--blue);
+    background:var(--blue-soft);
+  }
+  .seat .org{
+    font-size:10.5px;
+    font-weight:700;
+    color:var(--text-muted);
+    letter-spacing:.01em;
+  }
+  .seat .sub{
+    font-size:10.5px;
+    color:var(--text-muted);
+    margin-top:3px;
+    line-height:1.25;
+  }
+  .seat .name{
+    font-size:15px;
+    font-weight:700;
+    margin-top:5px;
+    line-height:1.2;
+  }
+  .seat[data-status="vacant"] .name{
+    font-size:14px;
+    font-weight:700;
+    color:var(--blue);
+    margin-top:0;
+  }
+  .seat .org:empty,
+  .seat .sub:empty{display:none;}
+  .seat .name[contenteditable="true"]{
+    outline:none;
+    cursor:text;
+    background:var(--surface-2);
+    border-radius:4px;
+    padding:1px 4px;
+  }
+  .seat[data-status="vacant"] .name[contenteditable="true"]:empty:before{
+    content:"이름 입력";
+    color:var(--text-muted);
+    font-weight:500;
+  }
+
+  /* ---------- free text notes ---------- */
+  .note{
+    position:absolute;
+    min-width:52px;
+    max-width:280px;
+    padding:3px 8px;
+    border-radius:6px;
+    font-size:13px;
+    font-weight:700;
+    line-height:1.35;
+    color:var(--note-color);
+    cursor:grab;
+    z-index:60;
+  }
+  .note:hover{background:var(--surface-2);}
+  .note.dragging{
+    cursor:grabbing;
+    background:var(--surface-2);
+    box-shadow:var(--shadow-lift);
+    z-index:70;
+  }
+  .note[data-editing="true"]{
+    cursor:text;
+    background:var(--surface);
+    border:1px dashed var(--border-strong);
+    box-shadow:var(--shadow);
+  }
+  .note-text{outline:none;white-space:pre-wrap;word-break:break-word;}
+  .note-text:empty:before{
+    content:"텍스트 입력";
+    color:var(--text-muted);
+    font-weight:500;
+  }
+  .note-delete{
+    position:absolute;
+    top:-9px; right:-9px;
+    width:18px; height:18px;
+    border-radius:50%;
+    background:var(--surface);
+    border:1px solid var(--border-strong);
+    color:var(--text-muted);
+    font-size:12px;
+    line-height:16px;
+    text-align:center;
+    padding:0;
+    cursor:pointer;
+    opacity:0;
+    transition:opacity .12s ease;
+  }
+  .note:hover .note-delete,
+  .note:focus-within .note-delete{opacity:1;}
+
+  .legend{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-top:14px;
+    font-size:12.5px;
+    color:var(--text-muted);
+  }
+  .legend .item{display:flex;align-items:center;gap:7px;}
+  .swatch{width:14px;height:14px;border-radius:4px;flex:none;}
+  .swatch.occ{background:var(--surface);border:1.5px solid var(--border);}
+  .swatch.vac{background:var(--blue-soft);border:1.5px dashed var(--blue);}
+  .legend .hint{margin-left:auto;}
+
+  /* ---------- export modal ---------- */
+  .modal-overlay{
+    position:fixed;inset:0;
+    background:rgba(10,11,14,0.55);
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+    z-index:100;
+  }
+  .modal-overlay[hidden]{display:none;}
+  .modal{
+    background:var(--surface);
+    border-radius:14px;
+    padding:20px;
+    max-width:min(900px,92vw);
+    max-height:90vh;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    box-shadow:var(--shadow-lift);
+  }
+  .modal h2{margin:0;font-size:16px;font-weight:700;}
+  .modal p{margin:0;font-size:13px;color:var(--text-muted);}
+  .modal-img-wrap{
+    overflow:auto;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:var(--surface-2);
+  }
+  .modal-img-wrap img{display:block;max-width:100%;}
+  .modal-close{align-self:flex-end;}
+
+  @media (prefers-reduced-motion: reduce){
+    .seat{transition:none;}
+  }
+</style>
+
+<div class="page">
+  <div class="toolbar">
+    <div class="title-block">
+      <h1><span>데일리샷</span> 6층 자리표</h1>
+      <p>카드를 끌어 다른 자리에 놓으면 서로 자리가 바뀌고, 이름을 더블클릭하면 수정할 수 있어요 · 변경 사항은 이 브라우저에 자동 저장됩니다</p>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="actions">
+      <span class="save-indicator" id="saveIndicator">저장됨</span>
+      <button class="btn" id="addNoteBtn" type="button">텍스트 추가</button>
+      <button class="btn" id="resetBtn" type="button">초기 배치로 되돌리기</button>
+      <button class="btn primary" id="exportBtn" type="button">이미지로 저장</button>
+    </div>
+  </div>
+
+  <div class="floor-wrap">
+    <div class="floor" id="floor">
+      <div class="entrance" style="left:20px;">
+        <span class="arrow">↓</span>
+        <span class="label">출입구 방향</span>
+      </div>
+      <div class="entrance" style="left:180px;">
+        <span class="arrow">↓</span>
+        <span class="label">출입구 방향</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="item"><span class="swatch occ"></span>재직중</div>
+    <div class="item"><span class="swatch vac"></span>공석</div>
+    <div class="hint">카드와 텍스트 모두 드래그로 옮길 수 있어요</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal">
+    <h2>자리표 이미지</h2>
+    <p>이미지를 우클릭(또는 길게 터치)한 뒤 "이미지를 다른 이름으로 저장"을 선택하세요.</p>
+    <div class="modal-img-wrap"><img id="exportImg" alt="6층 자리표 캡처 이미지" /></div>
+    <button class="btn modal-close" id="modalClose" type="button">닫기</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  // column x positions (px), grouped with aisle gaps matching the real floor
+  var COL_X = [24, 178, 308, 462, 592, 746, 876, 1030, 1160, 1314, 1444];
+  var ROW_Y = [140, 308, 476];
+
+  // seat data: [row, col, status, org, sub, name]
+  var SEATS = [
+    [0,0,"vacant","",""," "],
+    [0,1,"occupied","사업운영","파트너팀 MD파트","김현정"],
+    [0,2,"occupied","사업운영","파트너팀 MD파트","김경일"],
+    [0,3,"occupied","사업운영","파트너팀 운영파트","강동균"],
+    [0,4,"occupied","사업운영","파트너팀 운영파트","김채윤"],
+    [0,5,"occupied","사업운영","스토어팀 리드","이민기"],
+    [0,6,"occupied","사업운영","스토어팀 매니저","이예슬"],
+    [0,7,"occupied","사업운영","","권일"],
+    [0,8,"vacant","",""," "],
+    [0,9,"occupied","사업운영","마케팅팀 브랜드파트","김소영"],
+    [0,10,"occupied","사업운영","마케팅팀 리드","양세영"],
+
+    [1,0,"vacant","",""," "],
+    [1,1,"occupied","사업운영","파트너팀 MD파트","이현석"],
+    [1,2,"vacant","",""," "],
+    [1,3,"occupied","사업운영","파트너팀 운영파트","박주영"],
+    [1,4,"occupied","사업운영","파트너팀 운영파트리드","남현영"],
+    [1,5,"occupied","사업운영","스토어팀 매니저","이인석"],
+    [1,6,"occupied","사업운영","사업확장팀 택배 담당","정우태"],
+    [1,7,"occupied","사업운영","사업확장팀 면세점 담당","오승연"],
+    [1,8,"occupied","사업운영","CX팀 매니저","정솔비"],
+    [1,9,"occupied","사업운영","마케팅팀 브랜드파트리드","이승제"],
+    [1,10,"occupied","사업운영","마케팅팀 그로스파트","이혜진"],
+
+    [2,1,"occupied","사업운영","파트너팀 MD파트","김선아"],
+    [2,2,"occupied","사업운영","파트너팀 영업파트","서인호"],
+    [2,3,"occupied","사업운영","파트너팀 리드","박현호"],
+    [2,4,"occupied","사업운영","해외직구팀 매니저","장규동"],
+    [2,5,"occupied","사업운영","해외직구팀 리드","김성엽"],
+    [2,6,"occupied","사업운영","사업확장팀 리드","김태윤"],
+    [2,7,"occupied","사업운영","사업확장팀 편의점 담당","홍기화"],
+    [2,8,"occupied","사업운영","마케팅팀 브랜드파트","이윤정"],
+    [2,9,"occupied","사업운영","마케팅팀 브랜드파트","송세아"],
+    [2,10,"vacant","",""," "]
+  ];
+
+  // one fixed slot per seat in the real floor plan, in the same order as SEATS —
+  // dragging a card always resolves back onto one of these, so the layout can't drift
+  var SLOTS = SEATS.map(function(s){ return { x: COL_X[s[1]], y: ROW_Y[s[0]] }; });
+
+  var STORAGE_KEY = "dailyshot-6f-seatmap-positions-v2";
+  var STORAGE_KEY_SEATDATA = "dailyshot-6f-seatmap-seatdata-v1";
+  var floor = document.getElementById("floor");
+
+  function makeId(row,col){ return "r"+row+"c"+col; }
+
+  function loadSaved(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    }catch(e){ return {}; }
+  }
+
+  function loadJSON(key, fallback){
+    try{
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    }catch(e){ return fallback; }
+  }
+
+  function flashSaved(){
+    var ind = document.getElementById("saveIndicator");
+    ind.classList.add("show");
+    clearTimeout(flashSaved._t);
+    flashSaved._t = setTimeout(function(){ ind.classList.remove("show"); }, 1400);
+  }
+
+  function persist(positions){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(positions)); }catch(e){}
+    flashSaved();
+  }
+
+  var savedSlots = loadSaved();       // { seatId: slotIndex }
+  var savedSeatData = loadJSON(STORAGE_KEY_SEATDATA, {}); // { seatId: {status,org,sub,name} }
+  var cards = [];
+  var claimedSlots = {};
+
+  function renderSeat(card){
+    var d = card.data;
+    card.el.dataset.status = d.status;
+    card.orgEl.textContent = d.status === "vacant" ? "" : (d.org || "");
+    card.subEl.textContent = d.status === "vacant" ? "" : (d.sub || "");
+    card.nameEl.textContent = d.status === "vacant" ? "공석" : (d.name || "");
+  }
+
+  SEATS.forEach(function(s, i){
+    var row=s[0], col=s[1];
+    var id = makeId(row,col);
+    var base = { status:s[2], org:s[3], sub:s[4], name:s[5] };
+    var data = savedSeatData[id] ? savedSeatData[id] : base;
+
+    var slotIdx = savedSlots[id];
+    if(typeof slotIdx !== "number" || !SLOTS[slotIdx] || claimedSlots[slotIdx]) slotIdx = i;
+    if(claimedSlots[slotIdx]) slotIdx = i; // last-resort collision guard on corrupted data
+    claimedSlots[slotIdx] = true;
+
+    var el = document.createElement("div");
+    el.className = "seat";
+    el.dataset.id = id;
+    el.dataset.editing = "false";
+    el.style.left = SLOTS[slotIdx].x+"px";
+    el.style.top = SLOTS[slotIdx].y+"px";
+
+    var orgEl = document.createElement("div"); orgEl.className = "org";
+    var subEl = document.createElement("div"); subEl.className = "sub";
+    var nameEl = document.createElement("div"); nameEl.className = "name"; nameEl.contentEditable = "false";
+    el.appendChild(orgEl); el.appendChild(subEl); el.appendChild(nameEl);
+    floor.appendChild(el);
+
+    var card = {
+      el: el, id: id, row: row, col: col,
+      slotIndex: slotIdx, defaultSlotIndex: i,
+      orgEl: orgEl, subEl: subEl, nameEl: nameEl,
+      data: data
+    };
+    renderSeat(card);
+    cards.push(card);
+
+    function enterNameEdit(){
+      nameEl.contentEditable = "true";
+      el.dataset.editing = "true";
+      nameEl.focus();
+      var range = document.createRange();
+      range.selectNodeContents(nameEl);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    function exitNameEdit(){
+      nameEl.contentEditable = "false";
+      el.dataset.editing = "false";
+      var trimmed = nameEl.textContent.trim();
+      if(trimmed === ""){
+        card.data = { status:"vacant", org:"", sub:"", name:"" };
+      } else {
+        card.data = {
+          status: "occupied",
+          org: card.data.org || "사업운영",
+          sub: card.data.status === "vacant" ? "" : (card.data.sub || ""),
+          name: trimmed
+        };
+      }
+      renderSeat(card);
+      saveSeatData();
+      updateStats();
+    }
+
+    nameEl.addEventListener("dblclick", function(ev){ ev.stopPropagation(); enterNameEdit(); });
+    nameEl.addEventListener("blur", exitNameEdit);
+    nameEl.addEventListener("keydown", function(ev){
+      if(ev.key === "Enter"){ ev.preventDefault(); nameEl.blur(); }
+      if(ev.key === "Escape"){ nameEl.blur(); }
+    });
+  });
+
+  // ---- stats ----
+  function updateStats(){
+    var occCount = cards.filter(function(c){ return c.data.status === "occupied"; }).length;
+    var vacCount = cards.length - occCount;
+    document.getElementById("stats").innerHTML =
+      '<div class="stat-chip"><b>'+cards.length+'</b><span>전체 좌석</span></div>'+
+      '<div class="stat-chip"><b>'+occCount+'</b><span>재직중</span></div>'+
+      '<div class="stat-chip vacant"><b>'+vacCount+'</b><span>공석</span></div>';
+  }
+  updateStats();
+
+  // ---- drag logic ----
+  var floorRect, dragState = null;
+
+  function boundsClamp(x,y,w,h){
+    var maxX = floor.clientWidth - w - 4;
+    var maxY = floor.clientHeight - h - 4;
+    return {
+      x: Math.max(4, Math.min(x, maxX)),
+      y: Math.max(4, Math.min(y, maxY))
+    };
+  }
+
+  // shared pointer-drag behavior for both seat cards and text notes
+  function attachDrag(el, onDragEnd, isBlockedFn){
+    el.addEventListener("pointerdown", function(ev){
+      if(isBlockedFn && isBlockedFn()) return;
+      if(ev.target.closest && ev.target.closest(".note-delete")) return;
+      floorRect = floor.getBoundingClientRect();
+      var startLeft = parseFloat(el.style.left);
+      var startTop = parseFloat(el.style.top);
+      dragState = {
+        el: el,
+        offsetX: ev.clientX - floorRect.left - startLeft,
+        offsetY: ev.clientY - floorRect.top - startTop
+      };
+      el.setPointerCapture(ev.pointerId);
+      el.classList.add("dragging");
+    });
+
+    el.addEventListener("pointermove", function(ev){
+      if(!dragState || dragState.el !== el) return;
+      var rawX = ev.clientX - floorRect.left - dragState.offsetX;
+      var rawY = ev.clientY - floorRect.top - dragState.offsetY;
+      var clamped = boundsClamp(rawX, rawY, el.offsetWidth, el.offsetHeight);
+      el.style.left = clamped.x+"px";
+      el.style.top = clamped.y+"px";
+    });
+
+    function endDrag(ev){
+      if(!dragState || dragState.el !== el) return;
+      el.classList.remove("dragging");
+      dragState = null;
+      if(onDragEnd) onDragEnd();
+    }
+    el.addEventListener("pointerup", endDrag);
+    el.addEventListener("pointercancel", endDrag);
+  }
+
+  // moving a card always resolves onto the nearest fixed slot (snapping back onto its
+  // own slot, or swapping places with whichever card already sits on the nearest one) —
+  // so the grid can never end up with cards overlapping or drifting off the layout
+  function nearestSlotIndex(x, y){
+    var best = 0, bestDist = Infinity;
+    SLOTS.forEach(function(sl, i){
+      var dx = sl.x - x, dy = sl.y - y;
+      var d = dx*dx + dy*dy;
+      if(d < bestDist){ bestDist = d; best = i; }
+    });
+    return best;
+  }
+
+  function animateTo(el, slot){
+    el.style.transition = "left .18s ease, top .18s ease";
+    el.style.left = slot.x+"px";
+    el.style.top = slot.y+"px";
+    setTimeout(function(){ el.style.transition = ""; }, 200);
+  }
+
+  function snapCardAfterDrag(card){
+    var x = parseFloat(card.el.style.left);
+    var y = parseFloat(card.el.style.top);
+    var targetIdx = nearestSlotIndex(x, y);
+
+    if(targetIdx !== card.slotIndex){
+      var occupant = cards.find(function(c){ return c !== card && c.slotIndex === targetIdx; });
+      var originIdx = card.slotIndex;
+      card.slotIndex = targetIdx;
+      if(occupant){
+        occupant.slotIndex = originIdx;
+        animateTo(occupant.el, SLOTS[originIdx]);
+      }
+    }
+    animateTo(card.el, SLOTS[card.slotIndex]);
+    saveAllPositions();
+  }
+
+  cards.forEach(function(card){
+    attachDrag(card.el, function(){ snapCardAfterDrag(card); }, function(){ return card.el.dataset.editing === "true"; });
+  });
+
+  function saveAllPositions(){
+    var positions = {};
+    cards.forEach(function(c){ positions[c.id] = c.slotIndex; });
+    persist(positions);
+  }
+
+  function saveSeatData(){
+    var map = {};
+    cards.forEach(function(c){ map[c.id] = c.data; });
+    try{ localStorage.setItem(STORAGE_KEY_SEATDATA, JSON.stringify(map)); }catch(e){}
+    flashSaved();
+  }
+
+  // ---- free text notes (written on top of the floor plan / captured image) ----
+  var STORAGE_KEY_NOTES = "dailyshot-6f-seatmap-notes-v1";
+  var notes = [];
+
+  function saveNotes(){
+    var data = notes.map(function(n){
+      return {
+        id: n.id,
+        x: parseFloat(n.el.style.left),
+        y: parseFloat(n.el.style.top),
+        text: n.textEl.textContent
+      };
+    });
+    try{ localStorage.setItem(STORAGE_KEY_NOTES, JSON.stringify(data)); }catch(e){}
+    flashSaved();
+  }
+
+  function createNote(id, x, y, text){
+    var wrap = document.createElement("div");
+    wrap.className = "note";
+    wrap.dataset.id = id;
+    wrap.dataset.editing = "false";
+    wrap.style.left = x+"px";
+    wrap.style.top = y+"px";
+
+    var textEl = document.createElement("div");
+    textEl.className = "note-text";
+    textEl.contentEditable = "false";
+    textEl.textContent = text || "";
+
+    var delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "note-delete";
+    delBtn.title = "삭제";
+    delBtn.contentEditable = "false";
+    delBtn.textContent = "×";
+
+    wrap.appendChild(textEl);
+    wrap.appendChild(delBtn);
+    floor.appendChild(wrap);
+
+    function enterEdit(){
+      textEl.contentEditable = "true";
+      wrap.dataset.editing = "true";
+      textEl.focus();
+      var range = document.createRange();
+      range.selectNodeContents(textEl);
+      range.collapse(false);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+    function exitEdit(){
+      textEl.contentEditable = "false";
+      wrap.dataset.editing = "false";
+      saveNotes();
+    }
+
+    textEl.addEventListener("dblclick", function(ev){ ev.stopPropagation(); enterEdit(); });
+    textEl.addEventListener("blur", exitEdit);
+    textEl.addEventListener("keydown", function(ev){
+      if(ev.key === "Escape"){ textEl.blur(); }
+    });
+
+    delBtn.addEventListener("click", function(){
+      wrap.remove();
+      notes = notes.filter(function(n){ return n.id !== id; });
+      saveNotes();
+    });
+
+    attachDrag(wrap, saveNotes, function(){ return wrap.dataset.editing === "true"; });
+
+    var noteObj = { id: id, el: wrap, textEl: textEl, enterEdit: enterEdit };
+    notes.push(noteObj);
+    return noteObj;
+  }
+
+  loadJSON(STORAGE_KEY_NOTES, []).forEach(function(n){
+    createNote(n.id, n.x, n.y, n.text);
+  });
+
+  document.getElementById("addNoteBtn").addEventListener("click", function(){
+    var id = "note-" + Date.now();
+    var n = createNote(id, 700, 30, "");
+    saveNotes();
+    n.enterEdit();
+  });
+
+  // ---- reset (arrangement only — edited names/vacancies are kept) ----
+  document.getElementById("resetBtn").addEventListener("click", function(){
+    cards.forEach(function(c){
+      c.slotIndex = c.defaultSlotIndex;
+      c.el.style.left = SLOTS[c.defaultSlotIndex].x+"px";
+      c.el.style.top = SLOTS[c.defaultSlotIndex].y+"px";
+    });
+    try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  });
+
+  // ---- export image ----
+  var overlay = document.getElementById("modalOverlay");
+  var exportImg = document.getElementById("exportImg");
+  var exportBtn = document.getElementById("exportBtn");
+
+  exportBtn.addEventListener("click", function(){
+    exportBtn.disabled = true;
+    var prevLabel = exportBtn.textContent;
+    exportBtn.textContent = "캡처 중…";
+    var bg = getComputedStyle(document.body).getPropertyValue("background-color") || "#ffffff";
+    html2canvas(floor, { backgroundColor: bg.trim() || "#ffffff", scale: 2 }).then(function(canvas){
+      exportImg.src = canvas.toDataURL("image/png");
+      overlay.hidden = false;
+    }).catch(function(){
+      alert("이미지 생성에 실패했습니다. 다시 시도해 주세요.");
+    }).finally(function(){
+      exportBtn.disabled = false;
+      exportBtn.textContent = prevLabel;
+    });
+  });
+
+  document.getElementById("modalClose").addEventListener("click", function(){
+    overlay.hidden = true;
+  });
+  overlay.addEventListener("click", function(ev){
+    if(ev.target === overlay) overlay.hidden = true;
+  });
+})();
+</script>
