@@ -580,6 +580,11 @@
   }
 
   // shared pointer-drag behavior for both seat cards and text notes
+  // a plain click (or double-click, to edit a name/note) must never be swallowed as a
+  // drag — so capture/drag only actually engages once the pointer has moved past a
+  // small threshold; a click that never crosses it is left alone to fire natively
+  var DRAG_THRESHOLD = 4;
+
   function attachDrag(el, onDragEnd, isBlockedFn){
     el.addEventListener("pointerdown", function(ev){
       if(isBlockedFn && isBlockedFn()) return;
@@ -589,15 +594,25 @@
       var startTop = parseFloat(el.style.top);
       dragState = {
         el: el,
+        pointerId: ev.pointerId,
+        startClientX: ev.clientX,
+        startClientY: ev.clientY,
         offsetX: ev.clientX - floorRect.left - startLeft,
-        offsetY: ev.clientY - floorRect.top - startTop
+        offsetY: ev.clientY - floorRect.top - startTop,
+        moved: false
       };
-      el.setPointerCapture(ev.pointerId);
-      el.classList.add("dragging");
     });
 
     el.addEventListener("pointermove", function(ev){
       if(!dragState || dragState.el !== el) return;
+      if(!dragState.moved){
+        var dx = ev.clientX - dragState.startClientX;
+        var dy = ev.clientY - dragState.startClientY;
+        if(Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
+        dragState.moved = true;
+        el.setPointerCapture(dragState.pointerId);
+        el.classList.add("dragging");
+      }
       var rawX = ev.clientX - floorRect.left - dragState.offsetX;
       var rawY = ev.clientY - floorRect.top - dragState.offsetY;
       var clamped = boundsClamp(rawX, rawY, el.offsetWidth, el.offsetHeight);
@@ -607,9 +622,10 @@
 
     function endDrag(ev){
       if(!dragState || dragState.el !== el) return;
+      var didMove = dragState.moved;
       el.classList.remove("dragging");
       dragState = null;
-      if(onDragEnd) onDragEnd();
+      if(didMove && onDragEnd) onDragEnd();
     }
     el.addEventListener("pointerup", endDrag);
     el.addEventListener("pointercancel", endDrag);
